@@ -196,7 +196,29 @@ For **runnable scripts** — a multi-GPU inference script, a SLURM batch templat
 
 ### vLLM
 
-An initial **vLLM** integration for A.X K2 will be made publicly available soon—we will update this section with a link to the repository once the PR is submitted.
+A.X K2 support is being prepared as an upstream **vLLM** pull request. Until it lands, install from our fork at [SKT-AI/vllm](https://github.com/SKT-AI/vllm), which is upstream vLLM **v0.23.0** plus A.X K2 support and nothing else:
+
+```bash
+git clone -b axk2-v0.23.0 https://github.com/SKT-AI/vllm.git
+cd vllm
+pip install -e .   # see the vLLM docs for build prerequisites
+```
+
+The `axk2` config and model are registered in-tree on that branch, so `--trust-remote-code` is not needed:
+
+```bash
+vllm serve skt/A.X-K2 --tensor-parallel-size <N>
+```
+
+**Sizing.** Loaded, the FP8 weights occupy roughly **656 GiB of GPU memory** in aggregate, spread evenly across the tensor-parallel ranks, so choose `<N>` such that the node holds that much with room left for the KV cache. Our reference run used 4 GPUs of 275 GB (164 GiB of weights per GPU), which left a KV cache of about 968K tokens.
+
+**Startup.** The first launch is dominated by one-time kernel work — DeepGEMM warmup and flashinfer JIT compilation — not by reading weights. In our reference run the weights loaded in about 3 minutes while the whole engine took about 25 minutes to come up. The DeepGEMM kernels are cached under `VLLM_CACHE_ROOT` (`~/.cache/vllm` by default) and flashinfer keeps its own cache; with both warm, a subsequent launch completed in under 6 minutes. Keep them on persistent storage. Because the kernels are JIT-compiled on first use, the node also needs a working compiler toolchain — `ninja` and `nvcc` must be on `PATH`, or the run fails *after* the weights are already loaded.
+
+**Long context.** The 256K context works without extra flags, since the published `config.json` already carries the YaRN configuration. We verified needle-in-a-haystack retrieval at 32K, 128K, and 256K, at three needle depths each, on the reference configuration above.
+
+For **verification scripts** — a GPU-free wiring check, a generation smoke test, the needle-in-a-haystack test, and a SLURM batch template — see [`examples/vllm/`](./examples/vllm/README.md).
+
+The branch is pinned to a released vLLM tag rather than tracking `main`; newer bases will be published as additional branches. We will update this section with the upstream PR link once it is submitted.
 
 ## Intended Use
 

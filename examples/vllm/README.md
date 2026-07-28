@@ -1,0 +1,87 @@
+# A.X K2 vLLM 검증 예제
+
+[A.X K2 모델](https://huggingface.co/skt/A.X-K2)을 vLLM으로 서빙할 때 환경이 올바르게 구성됐는지 확인하는 스크립트입니다.
+
+A.X K2 지원은 업스트림 vLLM PR로 준비 중이며, 머지 전까지는 [SKT-AI/vllm](https://github.com/SKT-AI/vllm)의 `axk2-v0.23.0` 브랜치를 사용합니다. 이 브랜치는 업스트림 vLLM **v0.23.0**에 A.X K2 지원만 더한 것입니다.
+
+```bash
+git clone -b axk2-v0.23.0 https://github.com/SKT-AI/vllm.git
+cd vllm
+pip install -e .   # 빌드 사전 요구사항은 vLLM 문서를 참고하세요
+```
+
+`axk2` config와 모델이 in-tree로 등록되어 있으므로 `--trust-remote-code`는 필요하지 않습니다.
+
+## 요구사항
+
+- **GPU 메모리**: 적재 시 FP8 가중치가 **합계 약 656 GiB**를 차지하며 TP rank에 균등 분산됩니다. KV cache 여유를 포함해 TP 크기를 정하세요.
+  - 검증 구성: **275 GB × 4장, TP=4** — GPU당 가중치 164 GiB, KV cache 약 968K 토큰
+- **컴파일러 툴체인**: vLLM이 DeepGEMM·flashinfer 커널을 최초 사용 시 JIT 컴파일하므로 `ninja`와 `nvcc`가 PATH에 있어야 합니다. 없으면 **가중치를 모두 적재한 뒤에** 실패합니다.
+
+## 파일 구성
+
+| 파일 | 설명 | GPU |
+|------|------|-----|
+| `check_wiring.py` | config·registry·MLA·FP8 등록 지점 확인 | 불필요 |
+| `smoke_test.py` | 적재 후 thinking / non-thinking 생성 | 필요 |
+| `niah_test.py` | 32K / 128K / 256K 장문 검색 (NIAH) | 필요 |
+| `verify.batch` | 위 3개를 순서대로 실행하는 SLURM 스크립트 | 필요 |
+
+## 실행 방법
+
+### 1. 배선 확인 (GPU 불필요, 수 초)
+
+가중치를 적재하지 않고 등록 지점만 확인하므로, 잘못된 환경을 수 분짜리 적재 전에 걸러냅니다.
+
+```bash
+python check_wiring.py --ckpt skt/A.X-K2
+```
+
+확인 항목은 네 가지입니다.
+
+- `model_type: "axk2"`가 vLLM의 `AXK2Config`로 해석되는지 (Transformers config로 흘러가면 모델이 필요한 키가 유실됩니다)
+- `AXK2ForCausalLM`이 registry에서 resolve되고 모델 모듈이 실제로 import되는지
+- MLA가 선택되고 `head_size == 576`인지 (FlashMLA 커널은 320/576만 받습니다)
+- block-scaled FP8 양자화가 감지되는지
+
+### 2. 생성 확인
+
+```bash
+python smoke_test.py --ckpt skt/A.X-K2 --tp 4
+```
+
+### 3. 장문 검색 확인
+
+```bash
+python niah_test.py --ckpt skt/A.X-K2 --tp 4 \
+    --max-model-len 262144 \
+    --lengths 32768 131072 262144
+```
+
+길이별로 depth 0.15 / 0.5 / 0.85에 needle을 심고 회수 여부를 확인합니다. 길이·depth마다 코드값이 달라서 prefix 캐시 히트로 우연히 통과하는 경우가 배제됩니다. 프롬프트는 목표 길이에서 아래로 수렴시키며 **실제 토큰 수를 함께 출력**합니다.
+
+### SLURM 환경
+
+`verify.batch`에서 가상환경 경로와 TP를 설정한 뒤 제출합니다.
+
+```bash
+sbatch verify.batch
+```
+
+## 참고사항
+
+### 기동 시간
+
+첫 기동을 지배하는 것은 가중치 읽기가 아니라 **DeepGEMM warmup과 flashinfer JIT 컴파일**입니다. 검증 구성에서 가중치 적재는 약 3분이었지만 엔진 전체가 올라오기까지 약 25분이 걸렸습니다.
+
+이 커널들은 `VLLM_CACHE_ROOT`(기본 `~/.cache/vllm`)와 flashinfer 캐시에 저장되며, 캐시가 채워진 뒤 재기동은 **6분 미만**이었습니다. 캐시를 영구 스토리지에 두세요. 다중 노드에서는 공유 스토리지에 두면 노드 간 재사용됩니다.
+
+### 장문 컨텍스트
+
+공개된 `config.json`이 YaRN 설정을 이미 담고 있어 256K는 추가 플래그 없이 동작합니다.
+
+256K 요청 3개를 동시에 처리하려면 KV cache가 약 786K 토큰 필요합니다. 부족하면 vLLM이 순차적으로 스케줄링하므로 실패하지는 않고 시간만 늘어납니다.
+
+### throughput 수치에 대해
+
+세 스크립트 모두 `enforce_eager=True`로 실행합니다. CUDA graph가 비활성화되므로 출력되는 tok/s는 **성능 지표가 아닙니다** — 정확성 검증용 설정입니다. 성능을 측정하려면 `enforce_eager`를 제거하고 vLLM의 벤치마크 도구를 사용하세요.

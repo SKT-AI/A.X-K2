@@ -1,0 +1,50 @@
+#!/bin/bash
+#SBATCH --job-name=axk2-vllm
+#SBATCH --nodes=1
+#SBATCH --gres=gpu:4
+#SBATCH --cpus-per-task=32
+#SBATCH --mem=600G
+#SBATCH --time=04:00:00
+#SBATCH --output=%x-%j.out
+
+# Verify A.X K2 on vLLM: wiring checks, generation, then long-context retrieval.
+#
+# The 4-GPU request assumes 275GB cards. Size --gres and TP so that the ~656 GiB
+# of FP8 weights fit with room left for the KV cache -- see README.md.
+
+set -euo pipefail
+
+# ===== user settings =====
+export VENV="<YOUR_VENV_PATH>"
+MODEL_ID_OR_PATH="skt/A.X-K2"
+TP=4
+# =========================
+
+source "${VENV}/bin/activate"
+
+export TOKENIZERS_PARALLELISM=false
+export PYTHONUNBUFFERED=1
+
+# vLLM JIT-compiles DeepGEMM and flashinfer kernels on first use, so the node
+# needs a compiler toolchain on PATH. Without this the run fails *after* the
+# weights are already loaded.
+export CUDA_HOME=${CUDA_HOME:-/usr/local/cuda}
+export PATH="${VENV}/bin:${CUDA_HOME}/bin:${PATH}"
+command -v ninja nvcc gcc
+
+# Keep the kernel cache on persistent storage so later launches start warm.
+# VLLM_CACHE_ROOT defaults to ~/.cache/vllm and holds the DeepGEMM cache.
+export VLLM_CACHE_ROOT=${VLLM_CACHE_ROOT:-$HOME/.cache/vllm}
+export FLASHINFER_WORKSPACE_BASE=${FLASHINFER_WORKSPACE_BASE:-$HOME/.cache/flashinfer}
+mkdir -p "$VLLM_CACHE_ROOT" "$FLASHINFER_WORKSPACE_BASE"
+
+nvidia-smi --query-gpu=index,name,memory.total --format=csv
+
+# cheap first: catches a misconfigured environment before any weight loading
+python check_wiring.py --ckpt "${MODEL_ID_OR_PATH}"
+
+python smoke_test.py --ckpt "${MODEL_ID_OR_PATH}" --tp "${TP}"
+
+python niah_test.py --ckpt "${MODEL_ID_OR_PATH}" --tp "${TP}" \
+    --max-model-len 262144 \
+    --lengths 32768 131072 262144
