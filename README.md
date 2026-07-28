@@ -7,7 +7,7 @@
 </div>
 <br/>
 <p align="center">
-  <a href="https://huggingface.co/collections/skt/ax-k">🤗 Models</a> |
+  <a href="https://huggingface.co/collections/skt/ax-k2">🤗 Models</a> |
   <a href="https://github.com/SKT-AI/A.X-K2">🖥️ Github</a> |
   <a href="./A_X_K2_Tech_Report.pdf">📄 Technical Report</a>
 </p>
