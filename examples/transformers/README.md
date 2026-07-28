@@ -95,6 +95,10 @@ python inference.py --check_kernel_only
 
 생성 속도는 동일 환경에서 배치 1 기준 약 **1.5 tok/s**였습니다. Transformers 경로는 정확성 검증과 소규모 실험을 위한 것이며, 서빙에는 vLLM 경로를 사용하세요.
 
+### 컨텍스트 길이
+
+Transformers 경로에서 컨텍스트 길이는 GPU 메모리에 제약됩니다. attention이 `[batch, heads, S, S]` 텐서를 실체화하므로 필요 메모리가 길이의 제곱으로 늘어나며, 이 예제의 `device_map="auto"` 구성에서는 그 텐서가 한 장에 통째로 잡힙니다. B300 4장 기준으로는 수만 토큰 규모가 한계이니, 더 긴 컨텍스트가 필요하면 GPU를 늘리거나(장당 여유 증가) 텐서 병렬로 실행하세요 — 텐서 병렬에서는 헤드가 랭크별로 나뉘면서 이 텐서도 함께 쪼개집니다.
+
 ### 로더 경고
 
 로딩 시 `weight_scale_inv` 관련 **242개의 missing key 경고**가 나타나는 것은 정상입니다. Gated Norm의 게이트 MLP(`fc1`/`fc2`)는 FP8로 양자화되지 않고 bfloat16으로 유지되므로 해당 스케일 텐서를 사용하지 않습니다. unexpected key는 발생하지 않아야 합니다.
