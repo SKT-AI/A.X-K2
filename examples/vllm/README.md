@@ -73,9 +73,24 @@ sbatch verify.batch
 
 ### 기동 시간
 
-첫 기동을 지배하는 것은 가중치 읽기가 아니라 **DeepGEMM warmup과 flashinfer JIT 컴파일**입니다. B300 4장(TP=4), 공유 Lustre 스토리지 기준으로 가중치 적재는 약 3분이었지만 엔진 전체가 올라오기까지 약 25분이 걸렸습니다.
+첫 기동을 지배하는 것은 가중치 읽기가 아니라 **DeepGEMM warmup과 flashinfer JIT 컴파일**입니다. B300 4장(TP=4), 공유 Lustre 스토리지 기준으로 가중치 적재는 약 3.5분이었지만 엔진 전체가 올라오기까지 약 25분이 걸렸습니다.
 
 이 커널들은 `VLLM_CACHE_ROOT`(기본 `~/.cache/vllm`)와 flashinfer 캐시에 저장되며, 캐시가 채워진 뒤 같은 구성에서 재기동은 **6분 미만**이었습니다. 캐시를 영구 스토리지에 두세요. 다중 노드에서는 공유 스토리지에 두면 노드 간 재사용됩니다.
+
+### 첫 로딩이 더 느리지는 않습니다
+
+가중치 적재는 측정한 모든 조합에서 **196–221초** 사이였고, 조건에 따른 방향성이 없었습니다.
+
+| 파일시스템 캐시 | `--load-format` | 적재 |
+|---|---|---:|
+| cold (체크포인트 잔존율 0% 확인) | `auto` | 206초 |
+| cold (동일) | `fastsafetensors` | 208초 |
+| warm | `auto` | 196초 |
+| warm | `fastsafetensors` | 221초 |
+
+즉 **`--load-format fastsafetensors`를 쓸 이유가 없습니다.** 기본 로더가 cold에서도 약 3.1 GiB/s를 내는데 이 스토리지의 4스트림 가용 대역폭이 약 4 GB/s이므로 짜낼 여지가 거의 없고, 게다가 vLLM은 TP가 1보다 크면 GPU Direct Storage를 스스로 비활성화합니다(`nogds = pg.size() > 1`) — fastsafetensors의 이점이 나오는 지점이 바로 거기입니다.
+
+로컬 NVMe에 두고 TP=1로 돌리는 등 GDS가 실제로 동작하는 구성에서는 결과가 다를 수 있습니다. 캐시 상태는 `mincore(2)`로 확인했습니다(추측이 아니라 측정값입니다).
 
 ### 장문 컨텍스트
 
