@@ -267,13 +267,11 @@ For questions about A.X K2 — including model behavior, deployment, and licensi
 If you use A.X K2 in your research, please cite the technical report:
 
 ```bibtex
-@misc{TBD,
+@techreport{axk2-2026,
       title={A.X K2 Technical Report},
-      author={},
+      author={SK Telecom},
       year={2026},
-      eprint={},
-      archivePrefix={arXiv},
-      primaryClass={cs.CL},
-      url={https://arxiv.org/abs/2607.XXXXX},
+      institution={SK Telecom},
+      url={https://github.com/SKT-AI/A.X-K2/blob/main/A_X_K2_Tech_Report.pdf},
 }
 ```
