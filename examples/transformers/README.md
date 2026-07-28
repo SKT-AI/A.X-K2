@@ -109,10 +109,6 @@ python inference.py --check_kernel_only
 
 Transformers 경로에서 컨텍스트 길이는 GPU 메모리에 제약됩니다. attention이 `[batch, heads, S, S]` 텐서를 실체화하므로 필요 메모리가 길이의 제곱으로 늘어나며, 이 예제의 `device_map="auto"` 구성에서는 그 텐서가 한 장에 통째로 잡힙니다. B300 4장 기준으로는 수만 토큰 규모가 한계이니, 더 긴 컨텍스트가 필요하면 GPU를 늘리거나(장당 여유 증가) 텐서 병렬로 실행하세요 — 텐서 병렬에서는 헤드가 랭크별로 나뉘면서 이 텐서도 함께 쪼개집니다. 장문이 목적이라면 [vLLM 경로](../vllm/README.md)가 맞습니다. 그쪽은 indexer의 top-k 인덱스를 sparse MLA 커널에 직접 넘겨 이 텐서를 만들지 않으며, 256K 서빙까지 검증되어 있습니다.
 
-### 로더 경고
-
-로딩 시 `weight_scale_inv` 관련 **242개의 missing key 경고**가 나타나는 것은 정상입니다. Gated Norm의 게이트 MLP(`fc1`/`fc2`)는 FP8로 양자화되지 않고 bfloat16으로 유지되므로 해당 스케일 텐서를 사용하지 않습니다. 이 경고는 다음 Transformers 정식 업데이트에서 해결될 예정이며, 그때까지는 무시해도 됩니다. unexpected key는 발생하지 않아야 합니다.
-
 ### 에어갭(air-gapped) 환경
 
 에어갭 환경은 보안 정책상 외부 네트워크와 물리적으로 분리된 환경을 말합니다. Hugging Face Hub에 접속할 수 없으니 모델 가중치는 물론 FP8 커널까지 미리 받아 옮겨 두어야 합니다.
