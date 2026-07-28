@@ -83,6 +83,34 @@ sbatch verify.batch
 
 256K 요청 3개를 동시에 처리하려면 KV cache가 약 786K 토큰 필요합니다. B300 4장(TP=4)에서는 약 968K 토큰이 확보되어 들어갔습니다. 부족하면 vLLM이 순차적으로 스케줄링하므로 실패하지는 않고 시간만 늘어납니다.
 
+### 툴 호출과 thinking 모드
+
+OpenAI 호환 엔드포인트로 서빙할 때는 파서 두 개를 지정하세요.
+
+```bash
+vllm serve skt/A.X-K2 --tensor-parallel-size 4 \
+    --tool-call-parser hermes \
+    --reasoning-parser deepseek_v3
+```
+
+- **`--tool-call-parser hermes`** — 모델은 툴 호출을 `<tool_call>{"name": ..., "arguments": {...}}</tool_call>` 형태로 출력하며 hermes 파서가 이 형식을 그대로 처리합니다. 한 응답에 여러 개를 출력하는 parallel 호출도 각각 추출됩니다.
+- **`--reasoning-parser deepseek_v3`** — 요청의 `chat_template_kwargs`에 담긴 `enable_thinking` 값을 보고 thinking이면 `</think>` 기준으로 추론 문장을 분리하고, 아니면 분리하지 않습니다.
+
+**`deepseek_r1`을 쓰지 마세요.** non-thinking 프롬프트는 `</think>`로 끝나기 때문에 출력에는 `</think>`가 없는데, `deepseek_r1`은 종료 토큰이 없으면 출력 전체를 reasoning으로 분류합니다. 답변과 툴 호출이 모두 `reasoning` 필드에 묻히고 `content`는 비게 됩니다. `deepseek_v3`는 이 경우 분리를 건너뛰도록 위임합니다.
+
+모드는 요청마다 전환합니다.
+
+```python
+client.chat.completions.create(
+    model="skt/A.X-K2",
+    messages=[...],
+    tools=[...],
+    extra_body={"chat_template_kwargs": {"enable_thinking": True}},
+)
+```
+
+reasoning 추출이 툴 파싱보다 먼저 실행되므로 thinking과 툴을 함께 써도 추론 문장이 `content`나 툴 인자를 오염시키지 않습니다. hermes는 `arguments`를 JSON 문자열로 돌려주는데, 채팅 템플릿이 그 형식을 그대로 받아 다시 렌더링하므로 멀티턴 툴 사용에서 왕복이 맞물립니다.
+
 ### throughput 수치에 대해
 
 세 스크립트 모두 `enforce_eager=True`로 실행합니다. CUDA graph가 비활성화되므로 출력되는 tok/s는 **성능 지표가 아닙니다** — 정확성 검증용 설정입니다. 성능을 측정하려면 `enforce_eager`를 제거하고 vLLM의 벤치마크 도구를 사용하세요.
