@@ -9,7 +9,7 @@
 <p align="center">
   <a href="https://huggingface.co/collections/skt/ax-k">🤗 Models</a> |
   <a href="https://github.com/SKT-AI/A.X-K2">🖥️ Github</a> |
-  <a href="https://github.com/SKT-AI/A.X-K2/blob/main/A_X_K2_Tech_Report.pdf">📄 Technical Report</a>
+  <a href="./A_X_K2_Tech_Report.pdf">📄 Technical Report</a>
 </p>
 
 ## Model Summary
@@ -92,11 +92,27 @@ A.X K2 uses a single model to generate responses where reasoning before the answ
 
 Rather than a dual-track strategy, A.X K2 unifies training into a single track using a paired SFT dataset in which each prompt is associated with both a thinking and a non-thinking response, so the model learns mode control from explicit control tokens rather than from category-specific artifacts.
 
+## Training Data
+
+A.X K2 was pre-trained on approximately **8.2 trillion tokens** of web text, source code, academic papers, STEM and Q&A material, books, and synthetic data, arranged as a three-stage, difficulty-increasing curriculum (6.4T general knowledge → 1.4T high-quality reasoning → 0.36T long-context extension). The designed language mix of the first stage is English 72.7%, Korean 15.4%, code 8.3%, and Japanese, Spanish, and Chinese at roughly 1% each; later stages shift further toward English and toward reasoning, agentic, and long-context data.
+
+**Sources.** English web text comes from an aggregated corpus whose largest single contributor is [Nemotron-CC-v2.1](https://huggingface.co/datasets/nvidia/Nemotron-CC-v2.1); code comes from [Nemotron-Pretraining-Code-v2](https://huggingface.co/datasets/nvidia/Nemotron-Pretraining-Code-v2), and multilingual coverage from [FineWeb2](https://huggingface.co/datasets/HuggingFaceFW/fineweb-2). Korean web text comes from an in-house crawl (≈1.37T tokens), supplemented by an in-house PDF parsing pipeline and by synthetic data. These in-house components are proprietary and are not released. The datasets named here are the principal public ones rather than an exhaustive inventory; a number of smaller additional web sources are not listed individually.
+
+**Curation.** Heuristic and model-based quality filtering with deduplication, domain-aware mixture and upsampling, and difficulty scoring for curriculum learning. Documents are scored for educational value and difficulty and partitioned by a domain classifier, with quality thresholds applied per domain rather than globally and tightened as training advances; a candidate pool of roughly 16.2T tokens was reduced to the 8.2T tokens actually trained on.
+
+**Personal information.** Corpora collected in-house pass an internal PII masking pipeline before training: detected identifiers — primarily email addresses and numeric identifiers such as phone numbers — are replaced with type-specific placeholder tokens (for example `<|email|>`) rather than deleted, so surrounding text is preserved, and detection rules are maintained per identifier type and reviewed for false positives. The public datasets listed above are used as released and are not re-processed, since their publishers already apply their own PII handling.
+
+**Data provenance.** The source and collection method of every corpus used in training are recorded in an internal dataset inventory, and each source is reviewed for its permitted scope of use. Web data collected in-house is gathered in accordance with robots.txt directives. The public datasets listed above are used under their published licenses, and third-party corpora are acquired under agreements that license them for model training and permit release of the resulting model, while prohibiting redistribution of the underlying data itself.
+
+**Post-training.** Two supervised fine-tuning stages followed by multi-task RL and safety/red-teaming RL, using approximately **60.6B tokens** of paired thinking / non-thinking examples across agentic tool use, mathematics, knowledge and science, code, general chat, instruction following, and safety. Safety supervision builds on [ESSA](https://openreview.net/forum?id=Imcv0X7c36) (Evolved Safety Specification Alignment), which conditions data synthesis on evolved domain–task safety specifications and rewards safe completion over blanket refusal.
+
+See the [technical report](./A_X_K2_Tech_Report.pdf) for the full data pipeline, mixture tables, and post-training recipe.
+
 ## Evaluation Results
 
 ### Thinking Mode
 
-All models are evaluated in **thinking mode**. Benchmarks marked with an asterisk (*) are evaluated by [Artificial Analysis](https://artificialanalysis.ai). GDPval is reported as an Elo rating; all other benchmarks are reported as percentages. The best score in each row is shown in **bold**. See the [technical report](./A_X_K2_Tech_Report.pdf) for evaluation details.
+All models are evaluated in **thinking mode**. Benchmarks marked with an asterisk (*) are evaluated by [Artificial Analysis](https://artificialanalysis.ai). All benchmarks are reported as percentages. The best score in each row is shown in **bold**. See the [technical report](./A_X_K2_Tech_Report.pdf) for evaluation details.
 
 | Domain | Benchmark | A.X K2 (688B-A33B) | A.X K1 (519B-A33B) | Qwen3.5 | Nemotron 3 Ultra | DeepSeek-V4 Flash | GLM-5.1 | Kimi-K2.6 | MiniMax M2.7 |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -108,16 +124,12 @@ All models are evaluated in **thinking mode**. Benchmarks marked with an asteris
 | | KoBALT | 73.0 | 51.0 | 69.9 | 59.1 | **75.3** | 72.0 | 66.0 | 51.4 |
 | | CLIcK | **91.6** | 85.3 | 88.4 | 84.1 | 89.6 | 88.8 | 80.9 | 76.1 |
 | Code | LiveCodeBench v6 (Feb–May) | 84.0 | 74.9 | 82.6 | 76.4 | **89.4** | 86.4 | 86.5 | 69.8 |
-| | SciCode | 41.0 | 24.1 | 42.0 | 40.0 | 45.0 | 44.0 | **53.0** | 47.0 |
-| | Terminal Bench v2.1* | 36.0 | – | 51.3 | 53.9 | 61.8 | 61.8 | **65.9** | 55.4 |
-| Science & Knowledge | Humanity’s Last Exam | 27.8 | 8.3 | 27.0 | 27.0 | 32.0 | 28.0 | **36.0** | 28.0 |
-| | GPQA Diamond | 85.6 | 76.4 | 89.0 | 87.0 | 89.0 | 87.0 | **91.0** | 87.0 |
-| | AA-Omniscience* | 39.6 | 15.5 | 24.3 | 38.3 | 26.0 | 39.7 | **42.3** | 39.3 |
+| | SciCode | 41.0 | 24.1 | 42.0 | 39.9 | 44.9 | 43.8 | **53.5** | 47.0 |
+| Science & Knowledge | Humanity’s Last Exam | 27.8 | 8.3 | 27.3 | 26.6 | 32.1 | 28.0 | **35.9** | 28.1 |
+| | GPQA Diamond | 85.6 | 76.4 | 89.3 | 86.7 | 89.4 | 87.0 | **91.0** | 87.0 |
 | General | IFBench | 75.9 | 63.2 | 79.0 | 78.9 | **81.2** | 78.6 | 74.0 | 73.2 |
 | | AA-LCR | 66.0 | 26.0 | 66.0 | 67.0 | 63.0 | 62.0 | **70.0** | 69.0 |
-| Agentic | GDPval* (Elo) | 1031 | 500 | 962 | 1164 | 1189 | **1257** | 1190 | 1158 |
-| | τ²-Bench* (Telecom) | **98.0** | 86.0 | 95.6 | 83.3 | 95.0 | 97.7 | 95.9 | 84.8 |
-| | τ³-Bench* (Banking) | 13.0 | – | 13.4 | 13.8 | **22.9** | 11.5 | 20.6 | 8.9 |
+| Agentic | τ²-Bench* (Telecom) | **98.0** | 86.0 | 95.6 | 83.3 | 95.0 | 97.7 | 95.9 | 84.8 |
 | | BrowseComp (≤10 searches) | 9.3 | – | 26.9 | 13.4 | 16.8 | **29.1** | 21.5 | 14.2 |
 
 A.X K2 is strongest in the **Math** and **Korean** domains, achieving the best scores among all compared models on AIME26, Apex, Apex-shortlist, KMMLU-Pro, and CLIcK. Beyond final-answer benchmarks, A.X K2 scored **35/42 on IMO 2025**—reaching the gold-medal threshold with a perfect 7/7 on each of the first five problems—and produced **correct proofs for all 8 problems of the KMO26 2nd round**, using an iterative proof refinement method. It also achieves the best score on τ²-Bench Telecom among all compared models.
@@ -149,21 +161,76 @@ NIAH probes exact fact retrieval by inserting a target fact (the "needle") at va
 
 ### Transformers
 
-For users who wish to run direct inference with Hugging Face Transformers, please refer to the example scripts and instructions in [this repository](./examples/transformers/README.md).
+A.X K2 is **natively supported in Hugging Face Transformers**. The `axk2` architecture ships with the library itself, so neither `trust_remote_code=True` nor any custom modeling file is needed — see the [`axk2` model documentation](https://huggingface.co/docs/transformers/main/en/model_doc/axk2).
+
+The integration was merged after the **v5.14.1** release, so until the next release is published, install Transformers from source. FP8 execution additionally needs the `kernels` package, which supplies the block-scaled FP8 matmul the checkpoint runs on:
+
+```bash
+# install torch first, built against your CUDA version
+pip install git+https://github.com/huggingface/transformers.git accelerate "kernels>=0.15.2,<0.16.0"
+```
+
+```python
+from transformers import AutoModelForCausalLM, AutoTokenizer
+
+model_name = "skt/A.X-K2"
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+model = AutoModelForCausalLM.from_pretrained(model_name, device_map="auto")
+
+messages = [{"role": "user", "content": "A.X K2에 대해 간단히 소개해줘."}]
+inputs = tokenizer.apply_chat_template(
+    messages,
+    add_generation_prompt=True,
+    enable_thinking=True,  # omit or set False for non-thinking mode
+    return_tensors="pt",
+    return_dict=True,
+).to(model.device)
+
+outputs = model.generate(**inputs, max_new_tokens=1024)
+print(tokenizer.decode(outputs[0][inputs["input_ids"].shape[-1]:], skip_special_tokens=True))
+```
+
+FP8 execution is configured by the checkpoint itself (`quantization_config` in `config.json`), so no separate quantization step is needed. It requires `accelerate`, the `kernels` package, and a GPU of compute capability 8.9 or higher (for example RTX 4090, H100, B200); on SM90 and newer, DeepGEMM kernels are used when available and the `kernels` Triton path serves as the fallback. On older GPUs — or when no GPU is visible — Transformers dequantizes the weights to bfloat16 automatically, which needs roughly 1.4 TB of memory for the full model.
+
+For **runnable scripts** — a multi-GPU inference script, a SLURM batch template, hardware sizing, the FP8 kernel pre-check, and the air-gapped kernel recipe — see [`examples/transformers/`](./examples/transformers/README.md).
 
 ### vLLM
 
 An initial **vLLM** integration for A.X K2 will be made publicly available soon—we will update this section with a link to the repository once the PR is submitted.
 
+## Intended Use
+
+A.X K2 is a general-purpose, text-only foundation model released as open weights under Apache-2.0 for both research and commercial use. Built as an **agentic** foundation model, it is intended for multi-step reasoning and tool use, Korean- and English-language assistant applications, software engineering, mathematics and knowledge-intensive question answering, long-context workloads up to 256K tokens, and further adaptation as a base model. Use **thinking mode** where accuracy matters more than latency, and **non-thinking mode** for latency- or cost-sensitive use.
+
+As part of the Korean government's **Sovereign AI foundation model** project, A.X K2 is intended in particular to enable controllable, self-hosted AI adoption across Korean industry, government, and academia.
+
+A.X K2 is a foundation model, not a finished application. Deployments should keep a human in the loop for consequential decisions and add application-level safeguards appropriate to their domain and jurisdiction.
+
+## Out-of-Scope Use
+
+A.X K2 has not been evaluated or certified for autonomous decision-making in high-stakes domains. It should not be the sole or primary basis for medical, financial-eligibility, employment, legal, law-enforcement, or safety-critical decisions.
+
+We also ask users to refrain from using A.X K2 to generate unlawful content or material that infringes third-party rights, to produce targeted disinformation or impersonate real people or organizations, to circumvent its safety behavior for operational harm, or to process personal data without a lawful basis.
+
+The model is text-only: image, audio, and video inputs are not supported. Its tokenizer and training data target five languages (English, Korean, Chinese, Japanese, and Spanish); use in other languages is untested.
+
+## Limitations and Biases
+
+- **Factual reliability.** A.X K2 may generate incorrect or misleading information due to its stochastic nature; verify outputs before relying on them.
+- **Modality.** Text-only; no native multimodal understanding.
+- **Language coverage.** Pre-training data is predominantly English (roughly 73–90% by stage) and Korean (roughly 6–15%), with Chinese, Japanese, and Spanish at about 1% each, so quality in the latter three is materially less validated. Being largely web text, the corpus also leaves knowledge of long-tail regional and specialist topics uneven.
+- **Bias.** The model can reproduce social biases present in web-scale data, including stereotypes relating to gender, age, region, occupation, and nationality. Bias is one of nine dimensions judged during safety RL, but we did not run a dedicated quantitative bias or fairness evaluation — evaluate on your own population and task before deploying in bias-sensitive contexts.
+- **Safety.** Safety alignment reduces but does not eliminate unsafe outputs; adversarial prompting may still elicit harmful content.
+- **Agentic capability.** Agentic performance is moderate — A.X K2 trails the strongest compared models on BrowseComp — reflecting limited agentic RL during post-training. Evaluate long-horizon tool-use workloads before relying on them.
+- **Evaluation coverage.** Reported benchmarks are predominantly English and Korean, and largely single-turn.
+
 ## Lightweight Models
 
-If you are interested in using lightweight versions of A.X K2 for business applications or scalable deployment, please contact us at **a.x@sk.com**.
+If you are interested in using lightweight versions of A.X K2 for business applications or scalable deployment, please contact us at **[a.x@sk.com](mailto:a.x@sk.com)**.
 
-## Limitations
+## Contact
 
-- A.X K2 may generate incorrect or misleading information due to its stochastic nature.
-- Performance may vary across domains and languages depending on data coverage.
-- A.X K2 is currently text-only and does not support native multimodal understanding.
+For questions about A.X K2 — including model behavior, deployment, and licensing — contact the A.X team at **[a.x@sk.com](mailto:a.x@sk.com)**. Please send reports of vulnerabilities, harmful outputs, suspected misuse, or copyright infringement claims to the same address.
 
 ## Citation
 
