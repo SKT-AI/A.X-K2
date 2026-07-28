@@ -207,8 +207,12 @@ pip install -e .   # see the vLLM docs for build prerequisites
 The `axk2` config and model are registered in-tree on that branch, so `--trust-remote-code` is not needed:
 
 ```bash
-vllm serve skt/A.X-K2 --tensor-parallel-size <N>
+vllm serve skt/A.X-K2 --tensor-parallel-size <N> \
+    --tool-call-parser hermes \
+    --reasoning-parser deepseek_v3
 ```
+
+The two parser flags are what turn tool calls and the thinking trace into structured fields on the OpenAI-compatible endpoint. `deepseek_v3` reads `enable_thinking` out of each request's `chat_template_kwargs`, so the mode is chosen per call; use it rather than `deepseek_r1`, which would classify a whole non-thinking answer as reasoning.
 
 **Sizing.** Loaded, the FP8 weights occupy roughly **656 GiB of GPU memory** in aggregate, spread evenly across the tensor-parallel ranks, so choose `<N>` such that the node holds that much with room left for the KV cache. Every figure below was measured on our reference configuration — **four NVIDIA B300 GPUs (275 GB each) at `--tensor-parallel-size 4`** — which put 164 GiB of weights on each GPU and left a KV cache of about 968K tokens.
 
