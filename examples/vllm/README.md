@@ -113,4 +113,4 @@ reasoning 추출이 툴 파싱보다 먼저 실행되므로 thinking과 툴을 �
 
 ### throughput 수치에 대해
 
-세 스크립트 모두 `enforce_eager=True`로 실행합니다. CUDA graph가 비활성화되므로 출력되는 tok/s는 **성능 지표가 아닙니다** — 정확성 검증용 설정입니다. 성능을 측정하려면 `enforce_eager`를 제거하고 vLLM의 벤치마크 도구를 사용하세요.
+세 스크립트 모두 `enforce_eager=True`로 실행합니다. 이는 정확성 검증을 위한 설정이며, CUDA graph가 비활성화되므로 출력되는 tok/s는 **성능 지표가 아닙니다**. 성능을 측정하려면 `enforce_eager`를 제거하고 vLLM의 벤치마크 도구를 사용하세요.
