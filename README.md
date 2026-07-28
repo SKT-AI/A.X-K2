@@ -220,6 +220,10 @@ For **verification scripts** — a GPU-free wiring check, a generation smoke tes
 
 The branch is pinned to a released vLLM tag rather than tracking `main`; newer bases will be published as additional branches. We will update this section with the upstream PR link once it is submitted.
 
+### Chat template
+
+Both paths render the same `chat_template.jinja` from the checkpoint, which handles the thinking / non-thinking control tokens, tool calls, and reasoning retention across turns. [`examples/tests/`](./examples/tests/README.md) renders it directly and asserts on the result, covering the message shapes an OpenAI-compatible client sends; run it after any change to the template.
+
 ## Intended Use
 
 A.X K2 is a general-purpose, text-only foundation model released as open weights under Apache-2.0 for both research and commercial use. Built as an **agentic** foundation model, it is intended for multi-step reasoning and tool use, Korean- and English-language assistant applications, software engineering, mathematics and knowledge-intensive question answering, long-context workloads up to 256K tokens, and further adaptation as a base model. Use **thinking mode** where accuracy matters more than latency, and **non-thinking mode** for latency- or cost-sensitive use.
