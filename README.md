@@ -114,7 +114,7 @@ See the [technical report](./A_X_K2_Tech_Report.pdf) for the full data pipeline,
 
 All models are evaluated in **thinking mode**. Benchmarks marked with an asterisk (*) are evaluated by [Artificial Analysis](https://artificialanalysis.ai). All benchmarks are reported as percentages. The best score in each row is shown in **bold**. See the [technical report](./A_X_K2_Tech_Report.pdf) for evaluation details.
 
-| Domain | Benchmark | A.X K2 (688B-A33B) | A.X K1 (519B-A33B) | Qwen3.5 | Nemotron 3 Ultra | DeepSeek-V4 Flash | GLM-5.1 | Kimi-K2.6 | MiniMax M2.7 |
+| Domain | Benchmark | A.X K2 (688B-A33B) | A.X K1 (519B-A33B) | Qwen3.5 (397B-A17B) | Nemotron 3 Ultra | DeepSeek-V4 Flash | GLM-5.1 | Kimi-K2.6 | MiniMax M2.7 |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | Math | AIME26 | **97.1** | 91.3 | 92.5 | 85.4 | 96.7 | 95.4 | 95.4 | 88.8 |
 | | Apex | **45.8** | 1.0 | 13.5 | 3.1 | 28.1 | 10.4 | 20.8 | 1.0 |
@@ -126,9 +126,9 @@ All models are evaluated in **thinking mode**. Benchmarks marked with an asteris
 | Code | LiveCodeBench v6 (Feb–May) | 84.0 | 74.9 | 82.6 | 76.4 | **89.4** | 86.4 | 86.5 | 69.8 |
 | | SciCode | 41.0 | 24.1 | 42.0 | 39.9 | 44.9 | 43.8 | **53.5** | 47.0 |
 | Science & Knowledge | Humanity’s Last Exam | 27.8 | 8.3 | 27.3 | 26.6 | 32.1 | 28.0 | **35.9** | 28.1 |
-| | GPQA Diamond | 85.6 | 76.4 | 89.3 | 86.7 | 89.4 | 87.0 | **91.0** | 87.0 |
-| General | IFBench | 75.9 | 63.2 | 79.0 | 78.9 | **81.2** | 78.6 | 74.0 | 73.2 |
-| | AA-LCR | 66.0 | 26.0 | 66.0 | 67.0 | 63.0 | 62.0 | **70.0** | 69.0 |
+| | GPQA Diamond | 85.6 | 76.4 | 89.3 | 86.7 | 89.4 | 86.8 | **91.1** | 87.4 |
+| General | IFBench | 75.9 | 63.2 | 78.8 | **81.4** | 79.2 | 76.3 | 76.0 | 75.7 |
+| | AA-LCR | 66.0 | 26.0 | 65.7 | 67.0 | 63.0 | 62.3 | **69.7** | 68.7 |
 | Agentic | τ²-Bench* (Telecom) | **98.0** | 86.0 | 95.6 | 83.3 | 95.0 | 97.7 | 95.9 | 84.8 |
 | | BrowseComp (≤10 searches) | 9.3 | – | 26.9 | 13.4 | 16.8 | **29.1** | 21.5 | 14.2 |
 
