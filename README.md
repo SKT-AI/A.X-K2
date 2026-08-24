@@ -112,7 +112,7 @@ See the [technical report](./A_X_K2_Tech_Report.pdf) for the full data pipeline,
 
 ### Thinking Mode
 
-All models are evaluated in **thinking mode**. Benchmarks marked with an asterisk (*) are evaluated by [Artificial Analysis](https://artificialanalysis.ai). All benchmarks are reported as percentages. The best score in each row is shown in **bold**. See the [technical report](./A_X_K2_Tech_Report.pdf) for evaluation details.
+All models are evaluated in **thinking mode**. Benchmarks marked with an asterisk (*) are evaluated by [Artificial Analysis](https://artificialanalysis.ai). GDPval is reported as an Elo rating; all other benchmarks are reported as percentages. The best score in each row is shown in **bold**. See the [technical report](./A_X_K2_Tech_Report.pdf) for evaluation details.
 
 | Domain | Benchmark | A.X K2 (688B-A33B) | A.X K1 (519B-A33B) | Qwen3.5 (397B-A17B) | Nemotron 3 Ultra | DeepSeek-V4 Flash | GLM-5.1 | Kimi-K2.6 | MiniMax M2.7 |
 | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -125,11 +125,15 @@ All models are evaluated in **thinking mode**. Benchmarks marked with an asteris
 | | CLIcK | **91.6** | 85.3 | 88.4 | 84.1 | 89.6 | 88.8 | 80.9 | 76.1 |
 | Code | LiveCodeBench v6 (Feb–May) | 84.0 | 74.9 | 82.6 | 76.4 | **89.4** | 86.4 | 86.5 | 69.8 |
 | | SciCode | 41.0 | 24.1 | 42.0 | 39.9 | 44.9 | 43.8 | **53.5** | 47.0 |
+| | Terminal Bench v2.1* | 36.0 | – | 51.3 | 53.9 | 61.8 | 61.8 | **65.9** | 55.4 |
 | Science & Knowledge | Humanity’s Last Exam | 27.8 | 8.3 | 27.3 | 26.6 | 32.1 | 28.0 | **35.9** | 28.1 |
 | | GPQA Diamond | 85.6 | 76.4 | 89.3 | 86.7 | 89.4 | 86.8 | **91.1** | 87.4 |
+| | AA-Omniscience* | 39.6 | 15.5 | 24.3 | 38.3 | 26.0 | 39.7 | **42.3** | 39.3 |
 | General | IFBench | 75.9 | 63.2 | 78.8 | **81.4** | 79.2 | 76.3 | 76.0 | 75.7 |
 | | AA-LCR | 66.0 | 26.0 | 65.7 | 67.0 | 63.0 | 62.3 | **69.7** | 68.7 |
-| Agentic | τ²-Bench* (Telecom) | **98.0** | 86.0 | 95.6 | 83.3 | 95.0 | 97.7 | 95.9 | 84.8 |
+| Agentic | GDPval* (Elo) | 1031 | 500 | 962 | 1164 | 1189 | **1257** | 1190 | 1158 |
+| | τ²-Bench* (Telecom) | **98.0** | 86.0 | 95.6 | 83.3 | 95.0 | 97.7 | 95.9 | 84.8 |
+| | τ³-Bench* (Banking) | 13.0 | – | 13.4 | 13.8 | **22.9** | 11.5 | 20.6 | 8.9 |
 | | BrowseComp (≤10 searches) | 9.3 | – | 26.9 | 13.4 | 16.8 | **29.1** | 21.5 | 14.2 |
 
 A.X K2 is strongest in the **Math** and **Korean** domains, achieving the best scores among all compared models on AIME26, Apex, Apex-shortlist, KMMLU-Pro, and CLIcK. Beyond final-answer benchmarks, A.X K2 scored **35/42 on IMO 2025**—reaching the gold-medal threshold with a perfect 7/7 on each of the first five problems—and produced **correct proofs for all 8 problems of the KMO26 2nd round**, using an iterative proof refinement method. It also achieves the best score on τ²-Bench Telecom among all compared models.
@@ -253,7 +257,7 @@ The model is text-only: image, audio, and video inputs are not supported. Its to
 - **Language coverage.** Pre-training data is predominantly English (roughly 73–90% by stage) and Korean (roughly 6–15%), with Chinese, Japanese, and Spanish at about 1% each, so quality in the latter three is materially less validated. Being largely web text, the corpus also leaves knowledge of long-tail regional and specialist topics uneven.
 - **Bias.** The model can reproduce social biases present in web-scale data, including stereotypes relating to gender, age, region, occupation, and nationality. Bias is one of nine dimensions judged during safety RL, but we did not run a dedicated quantitative bias or fairness evaluation — evaluate on your own population and task before deploying in bias-sensitive contexts.
 - **Safety.** Safety alignment reduces but does not eliminate unsafe outputs; adversarial prompting may still elicit harmful content.
-- **Agentic capability.** Agentic performance is moderate — A.X K2 trails the strongest compared models on BrowseComp — reflecting limited agentic RL during post-training. Evaluate long-horizon tool-use workloads before relying on them.
+- **Agentic capability.** Agentic performance is moderate — A.X K2 trails the strongest compared models on Terminal Bench and BrowseComp — reflecting limited agentic RL during post-training. Evaluate long-horizon tool-use workloads before relying on them.
 - **Evaluation coverage.** Reported benchmarks are predominantly English and Korean, and largely single-turn.
 
 ## Lightweight Models
