@@ -273,11 +273,14 @@ For questions about A.X K2 — including model behavior, deployment, and licensi
 If you use A.X K2 in your research, please cite the technical report:
 
 ```bibtex
-@techreport{axk2-2026,
+@techreport{baek2026axk2technicalreport,
       title={A.X K2 Technical Report},
-      author={SK Telecom},
+      author={Cheolseung Baek and Dhammiko Arya and Eunki Kim and Gun Song and Gyoungeun Han and Hyunho Yang and Hyunjun Eun and Jin Kim and Junyoung Park and Juyun Wee and Minki Hong and Minkyung Park and Minsang Kim and Minsoo Kang and SaeRom Kim and Sangjin Kim and Sangyeol Lee and Seojin Lee and Seokhwan Jo and Seokyoung Hong and Seongho Choi and Seonghye Cho and Seongmin Ok and Sereimony Sek and Seungmo Cho and Seungsik Kim and Singon Kim and Sohee Park and Sooyeon Park and Subin Yi and Sungbin Yoon and Sungeun Lee and Sung Jun Cheon and Sungwan Kim and Sunwoo Lee and Tae Yoon Kim and Wonbeom Jang and Yohan Ra and Yong-jin Han and Youngjin Kim and Youngrang Kim and Yujin Kang and Yujin Lee},
       year={2026},
       institution={SK Telecom},
-      url={https://github.com/SKT-AI/A.X-K2/blob/main/A_X_K2_Tech_Report.pdf},
+      eprint={2608.30181},
+      archivePrefix={arXiv},
+      primaryClass={cs.AI},
+      url={https://arxiv.org/abs/2608.30181},
 }
 ```
