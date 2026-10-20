@@ -72,7 +72,7 @@ def main():
         return_dict=True,
     ).to(model.device)
 
-    # sampling defaults (temperature 0.6, top_p 0.95) come from generation_config.json
+    # sampling defaults (temperature 0.9, top_p 0.95) come from generation_config.json
     t0 = time.time()
     outputs = model.generate(**inputs, max_new_tokens=args.max_new_tokens)
     generated = outputs[0][inputs["input_ids"].shape[-1] :]

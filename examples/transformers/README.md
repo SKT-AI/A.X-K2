@@ -141,7 +141,7 @@ A.X K2는 sparse-attention 마스크를 명시적인 additive mask로 적용하�
 
 ### 샘플링 파라미터
 
-`generation_config.json`에 권장값(`temperature=0.6`, `top_p=0.95`, `do_sample=True`)이 포함되어 있으므로 `generate()`에서 따로 지정하지 않아도 적용됩니다.
+`generation_config.json`에 권장값(`temperature=0.9`, `top_p=0.95`, `do_sample=True`)이 포함되어 있으므로 `generate()`에서 따로 지정하지 않아도 적용됩니다.
 
 ### `dtype`을 지정하지 마세요
 

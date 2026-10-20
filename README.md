@@ -190,9 +190,11 @@ inputs = tokenizer.apply_chat_template(
     return_dict=True,
 ).to(model.device)
 
-outputs = model.generate(**inputs, max_new_tokens=1024)
+outputs = model.generate(**inputs, max_new_tokens=1024, do_sample=True, temperature=0.9, top_p=0.95)
 print(tokenizer.decode(outputs[0][inputs["input_ids"].shape[-1]:], skip_special_tokens=True))
 ```
+
+We recommend sampling with **`temperature=0.9`** and **`top_p=0.95`**. On the vLLM OpenAI-compatible endpoint, pass the same values as `temperature` and `top_p` in each request.
 
 FP8 execution is configured by the checkpoint itself (`quantization_config` in `config.json`), so no separate quantization step is needed. It requires `accelerate`, the `kernels` package, and a GPU of compute capability 8.9 or higher (for example RTX 4090, H100, B200); on SM90 and newer, DeepGEMM kernels are used when available and the `kernels` Triton path serves as the fallback. On older GPUs — or when no GPU is visible — Transformers dequantizes the weights to bfloat16 automatically, which needs roughly 1.4 TB of memory for the full model.
 
